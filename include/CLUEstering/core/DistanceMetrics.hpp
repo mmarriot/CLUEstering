@@ -86,6 +86,48 @@ namespace clue {
     }
   };
 
+  /// @brief Cylinder distance metric with optional per-point transverse scales
+  ///
+  /// Treats the first `Ndim - 1` dimensions as transverse and the last one as axial: the
+  /// distance is the maximum of the Euclidean distance in the transverse dimensions and the
+  /// absolute difference in the axial dimension, so the unit ball is a cylinder (a disc of
+  /// radius 1 times the interval [-1, 1] along the axis).
+  ///
+  /// For every transverse dimension that has per-point sigma values set, the coordinate
+  /// difference is divided by the mean sigma of the pair, `(sigma_i + sigma_j) / 2`.
+  ///
+  /// @tparam Ndim Number of dimensions (at least 2)
+  /// @tparam TData Floating-point type for coordinates and sigma values
+  template <std::size_t Ndim, std::floating_point TData = float>
+    // axial will crash if Ndim = 1   
+    requires(Ndim >= 2)
+  class CylinderMetric {
+  public:
+    using value_type = std::remove_cv_t<std::remove_reference_t<TData>>;
+
+    ALPAKA_FN_HOST_ACC constexpr CylinderMetric() = default;
+
+    /// @brief Compute the cylinder distance between points i and j
+    ///
+    /// @param points The PointsView holding coordinates and optional sigma arrays
+    /// @param i Index of the first point
+    /// @param j Index of the second point
+    /// @return Cylinder distance between the two points
+    ALPAKA_FN_HOST_ACC constexpr inline auto operator()(PointsView<Ndim, TData> points,
+                                                        std::size_t i,
+                                                        std::size_t j) const {
+      const auto transverse2 = meta::accumulate<Ndim - 1>([&]<std::size_t Dim>() {
+        auto diff = points[i][Dim] - points[j][Dim];
+        if (points.has_sigma(Dim)) {
+          diff /= (points.sigma(Dim)[i] + points.sigma(Dim)[j]) / value_type{2};
+        }
+        return diff * diff;
+      });
+      constexpr auto axial = Ndim - 1;
+      return math::max(math::sqrt(transverse2), math::fabs(points[i][axial] - points[j][axial]));
+    }
+  };
+
   /// @brief Euclidean distance metric
   //// This class implements the Euclidean distance metric in Ndim dimensions.
   ///
@@ -367,6 +409,13 @@ namespace clue {
     /// 	@tparam TData Point coordinates and weights data type
     template <std::size_t Ndim, std::floating_point TData = float>
     using Mahalanobis = clue::MahalanobisMetric<Ndim, TData>;
+
+    /// @brief Alias for Cylinder distance metric
+    ///
+    /// 	@tparam Ndim Number of dimensions
+    /// 	@tparam TData Point coordinates and sigma data type
+    template <std::size_t Ndim, std::floating_point TData = float>
+    using Cylinder = clue::CylinderMetric<Ndim, TData>;
 
   }  // namespace metrics
 
