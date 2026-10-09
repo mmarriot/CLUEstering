@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CLUEstering/internal/alpaka/config.hpp"
 #include "CLUEstering/core/ConvolutionalKernel.hpp"
 #include "CLUEstering/internal/math/math.hpp"
 
@@ -8,7 +9,7 @@
 #include <stdexcept>
 #include <alpaka/alpaka.hpp>
 
-namespace clue {
+namespace clue::inline CLUE_BACKEND {
 
   template <std::floating_point TData>
   inline FlatKernel<TData>::FlatKernel(value_type flat) : m_flat{flat} {
@@ -56,4 +57,4 @@ namespace clue {
     return (point_id == j) ? value_type{1} : (m_exp_amplitude * math::exp(-m_exp_avg * dist_ij));
   }
 
-}  // namespace clue
+}  // namespace clue::inline CLUE_BACKEND

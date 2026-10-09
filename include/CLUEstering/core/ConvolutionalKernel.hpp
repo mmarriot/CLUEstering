@@ -4,12 +4,13 @@
 
 #pragma once
 
+#include "CLUEstering/internal/alpaka/config.hpp"
 #include "CLUEstering/core/detail/defines.hpp"
 #include <alpaka/alpaka.hpp>
 #include <concepts>
 #include <type_traits>
 
-namespace clue {
+namespace clue::inline CLUE_BACKEND {
 
   /// @brief The FlatKernel class implements a flat kernel for convolution.
   /// It returns a constant value for the kernel, regardless of the distance between points.
@@ -110,6 +111,6 @@ namespace clue {
 
   }  // namespace concepts
 
-}  // namespace clue
+}  // namespace clue::inline CLUE_BACKEND
 
 #include "CLUEstering/core/detail/ConvolutionalKernel.hpp"
